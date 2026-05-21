@@ -1,0 +1,62 @@
+{
+  "_comment": "Append the entries below into ~/.claude/settings.json under \"hooks\". Do NOT overwrite existing hooks; merge arrays. Adjust the script path if your checkout lives elsewhere.",
+  "_path_to_bridge": "G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task|Bash",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task|Bash",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+        ]
+      }
+    ]
+  }
+}

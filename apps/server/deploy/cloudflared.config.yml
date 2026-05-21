@@ -1,0 +1,10 @@
+# Cloudflare Tunnel config for Pi. After `cloudflared tunnel create ai-dashboard`,
+# put this file at /etc/cloudflared/config.yml and the cert in the same dir.
+
+tunnel: ai-dashboard
+credentials-file: /etc/cloudflared/ai-dashboard.json
+
+ingress:
+  - hostname: ai-dashboard.example.com
+    service: http://127.0.0.1:8787
+  - service: http_status:404

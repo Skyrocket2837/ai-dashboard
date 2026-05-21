@@ -1,0 +1,26 @@
+{
+  "name": "ai-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-session Claude Code orchestrator + remote dashboard (Pi 4 hosted)",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:server": "pnpm --filter @ai-dashboard/server dev",
+    "dev:web": "pnpm --filter @ai-dashboard/web dev",
+    "dev:supervisor": "pnpm --filter @ai-dashboard/supervisor dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "bundle": "node scripts/build-deploy-bundle.mjs",
+    "deploy:pi": "pwsh -File scripts/deploy-pi.ps1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.9.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.6.8"
+}

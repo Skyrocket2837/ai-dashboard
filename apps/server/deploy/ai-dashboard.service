@@ -1,0 +1,33 @@
+[Unit]
+Description=AI Dashboard server (Fastify + SQLite)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ai-dashboard
+ExecStart=/usr/bin/node /home/pi/ai-dashboard/dist/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-dashboard
+
+# Resource limits — Pi 4 1GB safety net.
+MemoryMax=400M
+MemoryHigh=300M
+TasksMax=64
+LimitNOFILE=4096
+
+# Environment file (chmod 600). Define AID_HMAC_SECRET, AID_DB_PATH, etc.
+EnvironmentFile=/home/pi/ai-dashboard/.env
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
