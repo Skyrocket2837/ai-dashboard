@@ -19,5 +19,9 @@ deploy-out
 **/Thumbs.db
 **/tsbuildinfo
 **/*.tsbuildinfo
-apps/supervisor
+apps/supervisor/src
+apps/supervisor/scripts
+apps/supervisor/test
+apps/supervisor/.env.example
+apps/supervisor/claude-settings-snippet.json
 apps/server/public
