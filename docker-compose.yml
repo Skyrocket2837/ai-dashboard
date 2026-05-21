@@ -1,0 +1,28 @@
+services:
+  server:
+    image: ghcr.io/${GHCR_OWNER:-OWNER}/ai-dashboard-server:${TAG:-latest}
+    container_name: ai-dashboard-server
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - ai-dashboard-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 400m
+    mem_reservation: 200m
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  ai-dashboard-data:

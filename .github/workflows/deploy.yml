@@ -1,0 +1,60 @@
+name: Deploy to Pi
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Server Image"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to deploy"
+        required: false
+        default: "latest"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install ssh client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy compose
+        env:
+          PI_HOST: ${{ secrets.PI_HOST }}
+          PI_USER: ${{ secrets.PI_USER }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+          TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "${PI_USER}@${PI_HOST}" "mkdir -p ~/ai-dashboard"
+          scp docker-compose.yml "${PI_USER}@${PI_HOST}:~/ai-dashboard/docker-compose.yml"
+          ssh "${PI_USER}@${PI_HOST}" "cd ~/ai-dashboard && \
+            export GHCR_OWNER='${GHCR_OWNER,,}' && \
+            export TAG='${TAG}' && \
+            echo '${{ secrets.GHCR_PULL_TOKEN }}' | docker login ghcr.io -u '${{ secrets.GHCR_USERNAME }}' --password-stdin && \
+            docker compose pull && \
+            docker compose up -d && \
+            docker image prune -f"

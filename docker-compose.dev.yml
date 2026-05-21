@@ -1,0 +1,19 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      platforms:
+        - linux/amd64
+    image: ai-dashboard-server:dev
+    container_name: ai-dashboard-server-dev
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - ai-dashboard-dev-data:/data
+    restart: unless-stopped
+
+volumes:
+  ai-dashboard-dev-data:

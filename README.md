@@ -44,14 +44,57 @@ pnpm test            # 113 tests across server / web / supervisor
 pnpm typecheck       # strict TypeScript across all packages
 ```
 
-## Deploy to Raspberry Pi
+## Deploy to Raspberry Pi (Docker, recommended)
 
-```powershell
-pnpm bundle                          # produces deploy-out/
-pnpm deploy:pi -PiHost 10.0.0.42     # rsyncs + restarts systemd
+GitHub Actions builds a multi-arch image (`linux/amd64,linux/arm64`) and pushes it to GHCR. A second workflow SSH-deploys onto the Pi.
+
+### One-time Pi setup
+
+```bash
+# Install Docker (on Pi OS 64-bit / Ubuntu Server)
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker pi
+
+mkdir -p ~/ai-dashboard && cd ~/ai-dashboard
+# Copy .env.example → .env, set AID_HMAC_SECRET + GHCR_OWNER
+docker login ghcr.io   # use a PAT with read:packages
 ```
 
-First-time Pi setup is documented inside the generated `deploy-out/README.md` and the systemd unit at `apps/server/deploy/ai-dashboard.service` (capped at 400MB RAM for safety on the 1GB Pi).
+### GitHub secrets (Settings → Secrets and variables → Actions)
+
+| Secret | Used for |
+|--------|----------|
+| `PI_HOST` | Pi hostname or IP (Tailscale recommended) |
+| `PI_USER` | SSH user (e.g. `pi`) |
+| `PI_SSH_KEY` | Private key whose pub key is in `~pi/.ssh/authorized_keys` |
+| `GHCR_USERNAME` | Your GitHub username |
+| `GHCR_PULL_TOKEN` | PAT with `read:packages` (Pi-side login) |
+
+### Workflows
+
+- `.github/workflows/ci.yml` — typecheck + tests on every PR / push to main
+- `.github/workflows/build-and-push.yml` — multi-arch image build, push to `ghcr.io/<owner>/ai-dashboard-server`
+- `.github/workflows/deploy.yml` — chained after a successful build (or `workflow_dispatch`); SCP compose + `docker compose pull && up -d` on Pi
+
+### Local build (no daemon required to ship — CI builds for you)
+
+```powershell
+docker compose -f docker-compose.dev.yml up --build       # build + run amd64 locally
+docker compose -f docker-compose.yml up -d                # pull prebuilt image (set GHCR_OWNER + TAG)
+```
+
+### Pi memory budget under Docker
+
+| Component | RAM |
+|-----------|-----|
+| Docker daemon | ~80MB |
+| Server container (capped at 400MB) | ~120-150MB typical |
+| OS + system services | ~250-300MB |
+| **Headroom on 1GB Pi** | **~400-500MB** |
+
+### Native (no-Docker) fallback
+
+If Docker overhead is unacceptable, the `apps/server/deploy/ai-dashboard.service` systemd unit + `pnpm bundle && pnpm deploy:pi -PiHost <host>` still works.
 
 ## RAM gate behaviour
 
