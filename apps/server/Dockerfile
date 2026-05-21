@@ -6,20 +6,16 @@ WORKDIR /workspace
 
 RUN corepack enable && corepack prepare pnpm@8.6.8 --activate
 
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/server/package.json ./apps/server/
-COPY apps/web/package.json ./apps/web/
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY packages/shared ./packages/shared
+COPY apps/server ./apps/server
+COPY apps/web ./apps/web
 COPY apps/supervisor/package.json ./apps/supervisor/
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-COPY tsconfig.base.json ./
-COPY packages/shared ./packages/shared
-COPY apps/server ./apps/server
-COPY apps/web ./apps/web
-
 RUN pnpm --filter @ai-dashboard/shared build \
+ && ls -la packages/shared/dist \
  && pnpm --filter @ai-dashboard/web build \
  && pnpm --filter @ai-dashboard/server build
 
