@@ -20,7 +20,7 @@ RUN pnpm --filter @ai-dashboard/shared build \
  && pnpm --filter @ai-dashboard/server build
 
 # Use pnpm deploy to flatten server + its transitive workspace deps into one dir.
-RUN pnpm deploy --filter=@ai-dashboard/server --prod --legacy /deploy
+RUN pnpm deploy --filter=@ai-dashboard/server --prod /deploy
 
 # Stage 2: rebuild native modules on TARGETPLATFORM (better-sqlite3 needs arm64 .node).
 FROM --platform=$TARGETPLATFORM node:22-alpine AS native-deps
