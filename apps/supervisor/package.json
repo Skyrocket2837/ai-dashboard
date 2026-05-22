@@ -5,8 +5,8 @@
   "type": "module",
   "main": "src/supervisor.mjs",
   "scripts": {
-    "dev": "node --watch src/supervisor.mjs",
-    "start": "node src/supervisor.mjs",
+    "dev": "node --env-file-if-exists=.env --watch src/supervisor.mjs",
+    "start": "node --env-file-if-exists=.env src/supervisor.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
