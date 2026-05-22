@@ -17,6 +17,20 @@ export type HookEventType =
   | "SubagentStop"
   | "PreCompact";
 
+export type GateReasonKind =
+  | "ram-critical"
+  | "ram-low"
+  | "permission"
+  | "heavy-bash"
+  | "manual";
+
+export interface GateReason {
+  kind: GateReasonKind;
+  message: string;
+  available_mb?: number;
+  threshold_mb?: number;
+}
+
 export interface HookEvent {
   session_id: string;
   machine: string;
@@ -28,6 +42,7 @@ export interface HookEvent {
   project?: string;
   branch?: string;
   cwd?: string;
+  gate_reason?: GateReason;
   at: number;
 }
 
@@ -42,6 +57,8 @@ export interface SessionRecord {
   active_subagents: number;
   ram_mb: number | null;
   queue_position: number | null;
+  gate_reason: GateReason | null;
+  queued_at: number | null;
   last_activity_at: number;
   created_at: number;
 }

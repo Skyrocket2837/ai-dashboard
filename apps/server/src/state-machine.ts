@@ -25,9 +25,18 @@ export interface StateUpdate {
   current_prompt?: string | null;
   subagent_delta?: number;
   upsert?: boolean;
+  gate?: "set" | "clear";
 }
 
 export function computeStateUpdate(event: HookEvent): StateUpdate {
+  if (event.gate_reason) {
+    return {
+      upsert: true,
+      state: "queued",
+      gate: "set",
+      ...(event.tool_name ? { current_tool: event.tool_name } : {}),
+    };
+  }
   switch (event.type) {
     case "SessionStart":
       return { upsert: true, state: "idle" };
@@ -55,7 +64,7 @@ export function computeStateUpdate(event: HookEvent): StateUpdate {
     }
 
     case "PostToolUse":
-      return { current_tool: null };
+      return { current_tool: null, gate: "clear" };
 
     case "Notification": {
       const kind = event.notification_kind ?? inferNotificationKind(event);
@@ -68,7 +77,7 @@ export function computeStateUpdate(event: HookEvent): StateUpdate {
       return { subagent_delta: -1 };
 
     case "Stop":
-      return { state: "done", current_tool: null };
+      return { state: "done", current_tool: null, gate: "clear" };
 
     case "PreCompact":
       return {};

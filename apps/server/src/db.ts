@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   active_subagents INTEGER NOT NULL DEFAULT 0,
   ram_mb INTEGER,
   queue_position INTEGER,
+  gate_reason TEXT,
+  queued_at INTEGER,
   last_activity_at INTEGER NOT NULL,
   created_at INTEGER NOT NULL
 );
@@ -73,7 +75,21 @@ export function openDb(path: string): Database.Database {
   db.pragma("busy_timeout = 5000");
   db.pragma("cache_size = -20000");
   db.exec(SCHEMA_SQL);
+  migrateSchema(db);
   return db;
+}
+
+function migrateSchema(db: Database.Database): void {
+  const cols = db
+    .prepare<[], { name: string }>("PRAGMA table_info(sessions)")
+    .all()
+    .map((r) => r.name);
+  if (!cols.includes("gate_reason")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN gate_reason TEXT");
+  }
+  if (!cols.includes("queued_at")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN queued_at INTEGER");
+  }
 }
 
 export interface DbStatements {
@@ -83,6 +99,9 @@ export interface DbStatements {
   setSessionPrompt: Database.Statement;
   incSubagents: Database.Statement;
   decSubagents: Database.Statement;
+  setGateReason: Database.Statement;
+  clearGateReason: Database.Statement;
+  listQueued: Database.Statement;
   insertEvent: Database.Statement;
   listSessions: Database.Statement;
   getSession: Database.Statement;
@@ -112,6 +131,15 @@ export function prepareStatements(db: Database.Database): DbStatements {
       UPDATE sessions
       SET state = @state, last_activity_at = @at, queue_position = @queue_position
       WHERE id = @id
+    `),
+    setGateReason: db.prepare(`
+      UPDATE sessions SET gate_reason = @gate_reason, queued_at = @queued_at WHERE id = @id
+    `),
+    clearGateReason: db.prepare(`
+      UPDATE sessions SET gate_reason = NULL, queued_at = NULL WHERE id = ?
+    `),
+    listQueued: db.prepare(`
+      SELECT * FROM sessions WHERE state = 'queued' ORDER BY queued_at ASC
     `),
     setSessionTool: db.prepare(`
       UPDATE sessions SET current_tool = @tool, last_activity_at = @at WHERE id = @id
@@ -174,10 +202,20 @@ export interface SessionRow {
   active_subagents: number;
   ram_mb: number | null;
   queue_position: number | null;
+  gate_reason: string | null;
+  queued_at: number | null;
   last_activity_at: number;
   created_at: number;
 }
 
 export function rowToSession(r: SessionRow): SessionRecord {
-  return r;
+  let gate: SessionRecord["gate_reason"] = null;
+  if (r.gate_reason) {
+    try {
+      gate = JSON.parse(r.gate_reason) as SessionRecord["gate_reason"];
+    } catch {
+      gate = null;
+    }
+  }
+  return { ...r, gate_reason: gate };
 }

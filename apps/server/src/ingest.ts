@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import type { HookEvent, SupervisorHeartbeat } from "@ai-dashboard/shared";
-import type { DbStatements } from "./db.js";
+import type { DbStatements, SessionRow } from "./db.js";
+import { rowToSession } from "./db.js";
 import { computeStateUpdate } from "./state-machine.js";
 import type { SSEHub } from "./sse.js";
 
@@ -61,6 +62,15 @@ export function ingestEvents(
       } else if (update.subagent_delta && update.subagent_delta < 0) {
         stmts.decSubagents.run(ev.session_id);
       }
+      if (update.gate === "set" && ev.gate_reason) {
+        stmts.setGateReason.run({
+          id: ev.session_id,
+          gate_reason: JSON.stringify(ev.gate_reason),
+          queued_at: ev.at,
+        });
+      } else if (update.gate === "clear") {
+        stmts.clearGateReason.run(ev.session_id);
+      }
       stmts.insertEvent.run({
         session_id: ev.session_id,
         type: ev.type,
@@ -78,8 +88,8 @@ export function ingestEvents(
   });
   tx(events);
   for (const id of updated) {
-    const row = stmts.getSession.get(id);
-    if (row) hub.broadcast({ type: "session_updated", data: row });
+    const row = stmts.getSession.get(id) as SessionRow | undefined;
+    if (row) hub.broadcast({ type: "session_updated", data: rowToSession(row) });
   }
   return { ingested: events.length, updated_sessions: [...updated] };
 }

@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+
 /**
  * @typedef {{
  *   session_id?: string,
@@ -27,7 +29,7 @@
  * Decide hook response based on event type and RAM state.
  * @param {ClaudeHookInput} hook
  * @param {{ availableMb: number, threshold: number, hardLimit: number, heavyBashPatterns: RegExp[] }} ctx
- * @returns {HookResponse}
+ * @returns {HookResponse & { gate?: import("@ai-dashboard/shared").GateReason }}
  */
 export function decideHook(hook, ctx) {
   const event = hook.hook_event_name;
@@ -44,20 +46,34 @@ export function decideHook(hook, ctx) {
   if (!heavy) return {};
 
   if (ctx.availableMb < ctx.hardLimit) {
+    const msg = `RAM critical (${ctx.availableMb} MB available, need >${ctx.hardLimit} MB). Cancel or wait.`;
     return {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "deny",
-        permissionDecisionReason: `RAM critical (${ctx.availableMb} MB available, need >${ctx.hardLimit} MB). Cancel or wait.`,
+        permissionDecisionReason: msg,
+      },
+      gate: {
+        kind: "ram-critical",
+        message: msg,
+        available_mb: ctx.availableMb,
+        threshold_mb: ctx.hardLimit,
       },
     };
   }
   if (ctx.availableMb < ctx.threshold) {
+    const msg = `RAM low (${ctx.availableMb} MB available, soft threshold ${ctx.threshold} MB). Confirm to proceed.`;
     return {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "ask",
-        permissionDecisionReason: `RAM low (${ctx.availableMb} MB available, soft threshold ${ctx.threshold} MB). Confirm to proceed.`,
+        permissionDecisionReason: msg,
+      },
+      gate: {
+        kind: "ram-low",
+        message: msg,
+        available_mb: ctx.availableMb,
+        threshold_mb: ctx.threshold,
       },
     };
   }
@@ -84,9 +100,10 @@ function isRecord(x) {
  * Map Claude hook payload → normalized HookEvent for cloud push.
  * @param {ClaudeHookInput} hook
  * @param {string} machine
+ * @param {import("@ai-dashboard/shared").GateReason | undefined} [gate]
  * @returns {import("@ai-dashboard/shared").HookEvent}
  */
-export function toHookEvent(hook, machine) {
+export function toHookEvent(hook, machine, gate) {
   /** @type {"permission" | "idle" | "other" | undefined} */
   let notificationKind;
   if (hook.hook_event_name === "Notification") {
@@ -95,6 +112,16 @@ export function toHookEvent(hook, machine) {
     else if (text.includes("idle") || text.includes("waiting")) notificationKind = "idle";
     else notificationKind = "other";
   }
+  let effectiveGate = gate;
+  if (!effectiveGate && notificationKind === "permission") {
+    effectiveGate = {
+      kind: "permission",
+      message: hook.message ?? "Permission requested",
+    };
+  }
+  const cwdInfo = hook.cwd
+    ? { cwd: hook.cwd, project: deriveProject(hook.cwd), branch: deriveBranch(hook.cwd) ?? undefined }
+    : {};
   return /** @type {import("@ai-dashboard/shared").HookEvent} */ ({
     session_id: hook.session_id ?? "unknown",
     machine,
@@ -103,7 +130,8 @@ export function toHookEvent(hook, machine) {
     ...(hook.tool_input ? { tool_input: hook.tool_input } : {}),
     ...(hook.prompt ? { prompt: hook.prompt } : {}),
     ...(notificationKind ? { notification_kind: notificationKind } : {}),
-    ...(hook.cwd ? { cwd: hook.cwd, project: deriveProject(hook.cwd) } : {}),
+    ...(effectiveGate ? { gate_reason: effectiveGate } : {}),
+    ...cwdInfo,
     at: Date.now(),
   });
 }
@@ -112,4 +140,29 @@ export function toHookEvent(hook, machine) {
 function deriveProject(cwd) {
   const parts = cwd.replace(/\\/g, "/").split("/").filter(Boolean);
   return parts[parts.length - 1] ?? cwd;
+}
+
+/** @type {Map<string, { branch: string | null, at: number }>} */
+const branchCache = new Map();
+const BRANCH_TTL_MS = 30_000;
+
+/** @param {string} cwd */
+function deriveBranch(cwd) {
+  const now = Date.now();
+  const cached = branchCache.get(cwd);
+  if (cached && now - cached.at < BRANCH_TTL_MS) return cached.branch;
+  let branch = /** @type {string | null} */ (null);
+  try {
+    const out = execFileSync("git", ["-C", cwd, "rev-parse", "--abbrev-ref", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 1500,
+    });
+    const trimmed = out.trim();
+    if (trimmed && trimmed !== "HEAD") branch = trimmed;
+  } catch {
+    branch = null;
+  }
+  branchCache.set(cwd, { branch, at: now });
+  return branch;
 }

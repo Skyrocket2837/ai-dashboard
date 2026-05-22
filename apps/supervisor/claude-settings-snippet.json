@@ -1,12 +1,12 @@
 {
   "_comment": "Append the entries below into ~/.claude/settings.json under \"hooks\". Do NOT overwrite existing hooks; merge arrays. Adjust the script path if your checkout lives elsewhere.",
-  "_path_to_bridge": "G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1",
+  "_path_to_bridge": "G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -14,7 +14,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -22,7 +22,7 @@
       {
         "matcher": "Agent|Task|Bash",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -30,7 +30,7 @@
       {
         "matcher": "Agent|Task|Bash",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -38,7 +38,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -46,7 +46,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ],
@@ -54,7 +54,7 @@
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.ps1" }
+          { "type": "command", "command": "\"C:\\Program Files\\Git\\usr\\bin\\bash.exe\" G:\\project\\ai-dashboard\\apps\\supervisor\\scripts\\hook-bridge.sh" }
         ]
       }
     ]

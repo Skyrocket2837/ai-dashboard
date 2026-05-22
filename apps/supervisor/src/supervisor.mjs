@@ -75,10 +75,12 @@ const server = createServer(async (req, res) => {
     }
 
     if (pushClient) {
-      pushClient.enqueue(toHookEvent(hook, config.machine));
+      pushClient.enqueue(toHookEvent(hook, config.machine, decision.gate));
     }
 
-    sendJson(res, 200, decision);
+    // Strip our private `gate` field before responding to Claude.
+    const { gate: _gate, ...claudeReply } = decision;
+    sendJson(res, 200, claudeReply);
     return;
   }
 
